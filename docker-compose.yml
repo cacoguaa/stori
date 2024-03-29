@@ -1,0 +1,32 @@
+version: '3'
+services:
+  stori-db:
+    image: postgres:11.13
+    ports:
+      - '54321:54321'
+    container_name: stori-database
+    restart: always
+    hostname: postgresql
+    volumes:
+      - ./sql/schema.sql:/docker-entrypoint-initdb.d/create_schema.sql
+    environment:
+      POSTGRES_DB: stori
+      POSTGRES_USER: 'stori_user'
+      POSTGRES_PASSWORD: 'stori_secret'
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready" ]
+  app:
+    build: .
+    volumes:
+      - ./:/server/http
+    ports:
+      - "80:8080"
+    depends_on:
+      stori-db:
+        condition: service_healthy
+    links:
+      - "stori-db"
+    environment:
+      PORT: '8080'
+    env_file:
+      - run_env
